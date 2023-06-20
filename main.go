@@ -11,9 +11,10 @@ import (
 	bt "github.com/SakoDroid/telego"
 	cfg "github.com/SakoDroid/telego/configs"
 	objs "github.com/SakoDroid/telego/objects"
+	env "github.com/joho/godotenv"
 )
 
-const token string = "fillWithToken"
+var token string = ""
 
 // The instance of the bot.
 var bot *bt.Bot
@@ -65,6 +66,16 @@ func getBlacklist(c chan GetInformation, database db.DB[Data]) {
 	}
 }
 func main() {
+
+	env_err := env.Load()
+
+	if env_err != nil {
+		fmt.Println(env_err)
+		os.Exit(1)
+	}
+
+	token := os.Getenv("TELEGRAM_BOT_TOKEN")
+
 	up := cfg.DefaultUpdateConfigs()
 
 	cf := cfg.BotConfigs{
@@ -118,7 +129,7 @@ func start(d db.DB[Data], dc chan DeleteDataInformation, wi, bi chan GetInformat
 
 	bot.AddHandler("/start", func(u *objs.Update) {
 		kb := bot.CreateInlineKeyboard()
-		kb.AddURLButton("click me to go to google", "google.com", 1)
+		kb.AddURLButton("Click me to go to google", "google.com", 1)
 		kb.AddCallbackButtonHandler("click me to remove all your data", "/hi", 2, func(update *objs.Update) {
 			fmt.Println("delete was clicked")
 			toRemove := DeleteDataInformation{
