@@ -2,6 +2,7 @@ package main
 
 import (
 	"bot-telegram/db"
+	"bot-telegram/services"
 	"fmt"
 	"log"
 	"os"
@@ -154,6 +155,11 @@ func start(d db.DB[Data], dc chan DeleteDataInformation, wi, bi chan GetInformat
 				toAnswer: u.Message.Chat.Id,
 			}
 			bi <- toRemove
+		})
+		kb.AddCallbackButtonHandler("Get some random new", "/random", 5, func(update *objs.Update) {
+			fmt.Println("Random new was clicked")
+			summarized := services.Summarize()
+			bot.SendMessage(u.Message.Chat.Id, summarized, "", 0, false, false)
 		})
 		di := Data{
 			BlackList:  []string{},
