@@ -156,10 +156,11 @@ func start(d db.DB[Data], dc chan DeleteDataInformation, wi, bi chan GetInformat
 			}
 			bi <- toRemove
 		})
-		kb.AddCallbackButtonHandler("Get some random new", "/random", 5, func(update *objs.Update) {
-			fmt.Println("Random new was clicked")
-			summarized := services.Summarize()
-			bot.SendMessage(u.Message.Chat.Id, summarized, "", 0, false, false)
+		kb.AddCallbackButtonHandler("Summarize a hardcoded and short new", "/summarize", 5, func(update *objs.Update) {
+			fmt.Println("Summarize new was clicked")
+			newBody := services.GetRandomNew()
+			summarizedNew := services.Summarize(newBody)
+			bot.SendMessage(u.Message.Chat.Id, summarizedNew, "", 0, false, false)
 		})
 		di := Data{
 			BlackList:  []string{},

@@ -9,21 +9,18 @@ import (
 	"strings"
 )
 
-const model = "gpt-3.5-turbo"
-const maxTokens = 30
-const temperature = 0
-
 var client = &http.Client{}
 
-func Summarize() string {
+func Summarize(text string) string {
 	payload := strings.NewReader(`{
 		"model": "gpt-3.5-turbo",
 		"messages": [
-			{"role": "user", "content": "Felicitame por usar la API usando lenguaje taringuero"}
+			{"role": "system", "content": "You are an assistant used in a Telegram bot that can summarize news. Be brief, I dont want a response with much more than 40 words. Your response should be in the same language that the provided news are."},
+			{"role": "user", "content": "`+ text +`"}
 		],
-		"temperature": 0.7
+		"temperature": 0.2
 	}`)
-	fmt.Println(payload)
+	fmt.Println(payload) // TODO: remove log
 	req, err := http.NewRequest("POST", "https://api.openai.com/v1/chat/completions", payload)
 
 	if err != nil {
@@ -44,7 +41,7 @@ func Summarize() string {
 	}
 
 	defer resp.Body.Close()
-	
+	fmt.Println(string(body)) // TODO: remove log
 	var result map[string]any
 	json.Unmarshal([]byte(string(body)), &result)
 	summarized := result["choices"].([]any)[0].(map[string]any)["message"].(map[string]any)["content"].(string)
