@@ -1,4 +1,4 @@
-package services
+package gpt
 
 import (
 	"encoding/json"
@@ -16,7 +16,7 @@ func Summarize(text string) string {
 		"model": "gpt-3.5-turbo",
 		"messages": [
 			{"role": "system", "content": "You are an assistant used in a Telegram bot that can summarize news. Be brief, I dont want a response with much more than 40 words. Your response should be in the same language that the provided news are."},
-			{"role": "user", "content": "`+ text +`"}
+			{"role": "user", "content": "` + text + `"}
 		],
 		"temperature": 0.2
 	}`)
@@ -30,7 +30,7 @@ func Summarize(text string) string {
 
 	req.Header.Add("Content-Type", "application/json")
 	apiKey := os.Getenv("OPENAI_API_KEY")
-	req.Header.Add("Authorization", "Bearer " + apiKey)
+	req.Header.Add("Authorization", "Bearer "+apiKey)
 
 	resp, err := client.Do(req)
 

@@ -1,4 +1,4 @@
-package services
+package news
 
 func GetRandomNew() string {
 	// TODO: get news dynamically from an API
