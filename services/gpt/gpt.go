@@ -1,50 +1,75 @@
 package gpt
 
 import (
+	"bot-telegram/services/gpt/internal/config"
+	"bot-telegram/services/gpt/internal/domain"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strings"
 )
 
-var client = &http.Client{}
+const (
+	postCompletionURL = "postCompletion"
+	openApiKeyEnv     = "OPENAI_API_KEY"
+	contentType       = "application/json"
+)
 
-func Summarize(text string) string {
-	payload := strings.NewReader(`{
-		"model": "gpt-3.5-turbo",
-		"messages": [
-			{"role": "system", "content": "You are an assistant used in a Telegram bot that can summarize news. Be brief, I dont want a response with much more than 40 words. Your response should be in the same language that the provided news are."},
-			{"role": "user", "content": "` + text + `"}
-		],
-		"temperature": 0.2
-	}`)
-	fmt.Println(payload) // TODO: remove log
-	req, err := http.NewRequest("POST", "https://api.openai.com/v1/chat/completions", payload)
+type GPT struct {
+	config *config.GPTConfig
+	client *http.Client
+}
 
+func NewGPT(gptConfig *config.GPTConfig, client *http.Client) *GPT {
+	return &GPT{
+		config: gptConfig,
+		client: client,
+	}
+}
+
+// SummarizeNews returns the userRequest summarized
+// ToDo: if we want, we can send a slice of requests
+func (gpt *GPT) SummarizeNews(userRequest string) (string, error) {
+	userMessage := domain.NewMessage(domain.UserRole, userRequest)
+	complainRequest := domain.NewCompletionRequest(gpt.config, []domain.Message{userMessage})
+	complainRequestStr, err := domain.GetCompletionRequestAsString(complainRequest)
 	if err != nil {
-		fmt.Println("Summarize error: cannot create HTTP POST request", err)
-		return ""
+		return "", err // ToDo: add typed error
 	}
 
-	req.Header.Add("Content-Type", "application/json")
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	req.Header.Add("Authorization", "Bearer "+apiKey)
-
-	resp, err := client.Do(req)
-
-	body, err := ioutil.ReadAll(resp.Body)
+	// ToDo: initialize this request in other function, otherwise every time we call this method we are creating it
+	request, err := http.NewRequest(http.MethodPost, "https://api.openai.com/v1/chat/completions", strings.NewReader(complainRequestStr))
 	if err != nil {
-		fmt.Println("Summarize error: cannot read response body", err)
-		return ""
+		return "", fmt.Errorf("error creating request: %v", err)
 	}
 
-	defer resp.Body.Close()
-	fmt.Println(string(body)) // TODO: remove log
-	var result map[string]any
-	json.Unmarshal([]byte(string(body)), &result)
-	summarized := result["choices"].([]any)[0].(map[string]any)["message"].(map[string]any)["content"].(string)
+	// ToDo: if we need more headers create a package for them. Doing this we can avoid writing them manually
+	request.Header.Add("Content-Type", contentType)
+	apiKey := os.Getenv(openApiKeyEnv)
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
 
-	return summarized
+	response, err := gpt.client.Do(request)
+	if err != nil {
+		return "", fmt.Errorf("error doing request: %v", err)
+	}
+
+	defer func() {
+		_ = response.Body.Close()
+	}()
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return "", fmt.Errorf("Summarize error: cannot read response body: %v", err)
+	}
+
+	var completionResponse domain.CompletionResponse
+	err = json.Unmarshal(body, &completionResponse)
+	if err != nil {
+		return "", fmt.Errorf("error unmarshalling response: %v", err)
+	}
+
+	// ToDo: check if it's better to return the struct instead of the message
+	return completionResponse.Messages[0].Content, nil
 }
