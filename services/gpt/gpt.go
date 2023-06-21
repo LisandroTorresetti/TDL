@@ -39,8 +39,12 @@ func (gpt *GPT) SummarizeNews(userRequest string) (string, error) {
 		return "", err // ToDo: add typed error
 	}
 
-	// ToDo: initialize this request in other function, otherwise every time we call this method we are creating it
-	request, err := http.NewRequest(http.MethodPost, "https://api.openai.com/v1/chat/completions", strings.NewReader(complainRequestStr))
+	endpoint, ok := gpt.config.Endpoints[postCompletionURL]
+	if !ok {
+		return "", fmt.Errorf("error endpoint does not exists")
+	}
+
+	request, err := http.NewRequest(endpoint.Method, endpoint.URL, strings.NewReader(complainRequestStr))
 	if err != nil {
 		return "", fmt.Errorf("error creating request: %v", err)
 	}

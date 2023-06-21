@@ -1,0 +1,7 @@
+model: 'gpt-3.5-turbo'
+temperature: 0.2
+
+urls:
+  postCompletion:
+    url: 'https://api.openai.com/v1/chat/completions'
+    method: 'POST'
