@@ -156,7 +156,7 @@ func start(d db.DB[Data], dc chan DeleteDataInformation, wi, bi chan GetInformat
 			}
 			bi <- toRemove
 		})
-		kb.AddCallbackButtonHandler("Get a summarized sport new", "/summarize", 5, func(update *objs.Update) {
+		kb.AddCallbackButtonHandler("Get a summarized technology new", "/summarize", 5, func(update *objs.Update) {
 			new, err := services.GetNew("technology")
 			if err != nil {
 				bot.SendMessage(u.Message.Chat.Id, "An error has ocurred, please try again later.", "", 0, false, false)
