@@ -1,0 +1,7 @@
+package services
+
+func GetRandomNew() string {
+	// TODO: get news dynamically from an API
+	// Original: https://www.clarin.com/viste/dato-asusta-tabaco-mata-45-000-personas-argentina-ano_0_y6Y5yP6a2M.html
+	return `A pesar de haber disminuido casi en un 50 porciento los fumadores en Argentina en los últimos 25 años, según datos oficiales, el tabaquismo sigue siendo una de las mayores amenazas para la salud pública pues 225.000 personas enferman y 45.000 mueren cada año a causa del cigarrillo.De esos 45 mil decesos ligados al tabaco, 6 mil nunca probaron fumar, por lo que el humo pasivo todavía sigue siendo un grave problema sanitario.Esos fallecimientos representan el 14 porciento de todas las muertes en el país, según afirma un informe de la Red de Hospitales Universitarios de la Universidad de Buenos Aires (UBA), dado a conocer por la conmemoración del Día Mundial sin Tabaco, celebrado el miércoles pasado.En las últimas décadas, las políticas públicas de salud en Argentina buscaron disminuir la prevalencia del consumo del tabaco con medidas como la prohibición de fumar en espacios públicos, el empaquetado neutro y con advertencias sobre las consecuencias que tiene fumar, y la restricción de publicidad, junto con el desarrollo de programas antitabaco.Argentina firmó el Convenio Marco de la Organización Mundial de la Salud (OMS) para el Control del Tabaco (CMCT) el 25 de septiembre de 2003 pero por diversos intereses y lobbys de la industria, no ha pasado a la ratificación legislativa.`
+}

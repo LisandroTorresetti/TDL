@@ -2,8 +2,7 @@ package main
 
 import (
 	"bot-telegram/db"
-	"bot-telegram/services/gpt"
-	"bot-telegram/services/news"
+	"bot-telegram/services"
 	"fmt"
 	"log"
 	"os"
@@ -159,8 +158,8 @@ func start(d db.DB[Data], dc chan DeleteDataInformation, wi, bi chan GetInformat
 		})
 		kb.AddCallbackButtonHandler("Summarize a hardcoded and short new", "/summarize", 5, func(update *objs.Update) {
 			fmt.Println("Summarize new was clicked")
-			newBody := news.GetRandomNew()
-			summarizedNew := gpt.Summarize(newBody)
+			newBody := services.GetRandomNew()
+			summarizedNew := services.Summarize(newBody)
 			bot.SendMessage(u.Message.Chat.Id, summarizedNew, "", 0, false, false)
 		})
 		di := Data{
