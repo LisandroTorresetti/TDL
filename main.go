@@ -1,18 +1,14 @@
 package main
 
 import (
+	newsBot "bot-telegram/bot"
 	"bot-telegram/db"
 	"bot-telegram/services"
 	"fmt"
+	bt "github.com/SakoDroid/telego"
+	objs "github.com/SakoDroid/telego/objects"
 	"log"
 	"os"
-	"os/signal"
-	"syscall"
-
-	bt "github.com/SakoDroid/telego"
-	cfg "github.com/SakoDroid/telego/configs"
-	objs "github.com/SakoDroid/telego/objects"
-	env "github.com/joho/godotenv"
 )
 
 const botTokenEnv = "TELEGRAM_BOT_TOKEN"
@@ -20,7 +16,7 @@ const botTokenEnv = "TELEGRAM_BOT_TOKEN"
 // The instance of the bot.
 var bot *bt.Bot
 
-type Data struct {
+/*type Data struct {
 	NewsWanted []string `json:"news_wanted"`
 	BlackList  []string `json:"black_list"`
 	Id         int      `json:"id"`
@@ -38,7 +34,7 @@ type GetInformation struct {
 
 func (d Data) GetPrimaryKey() int {
 	return d.Id
-}
+}*/
 
 func deleteData(c chan DeleteDataInformation, database db.DB[Data]) {
 	for {
@@ -67,36 +63,27 @@ func getBlacklist(c chan GetInformation, database db.DB[Data]) {
 	}
 }
 func main() {
-
-	env_err := env.Load()
-
-	if env_err != nil {
-		fmt.Println(env_err)
+	telegramNewsBot, err := newsBot.CreateNewsBot()
+	if err != nil {
+		fmt.Printf("error creating News Bot: %v", err)
 		os.Exit(1)
 	}
 
-	token := os.Getenv(botTokenEnv)
-
-	updateConfiguration := cfg.DefaultUpdateConfigs()
-
-	cf := cfg.BotConfigs{
-		BotAPI: cfg.DefaultBotAPI,
-		APIKey: token, UpdateConfigs: updateConfiguration,
-		Webhook:        false,
-		LogFileAddress: cfg.DefaultLogFile,
+	err = telegramNewsBot.Run()
+	if err != nil {
+		fmt.Printf("service error: %v", err)
+		os.Exit(1)
 	}
 
-	var err error
+	fmt.Println("Finish NewsBot successfully")
 
-	//Creating the bot using the created configs
-	bot, err = bt.NewBot(&cf)
-	c := make(chan os.Signal, 1)
+	/*c := make(chan os.Signal, 1)
 	signal.Notify(c,
 		syscall.SIGHUP,
 		syscall.SIGINT,
 		syscall.SIGTERM,
 		syscall.SIGQUIT,
-	)
+	)*/
 	deleteChan := make(chan DeleteDataInformation, 100)
 	wi := make(chan GetInformation, 100)
 	bi := make(chan GetInformation, 100)
