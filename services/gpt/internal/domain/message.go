@@ -28,12 +28,3 @@ func getSystemMessage() Message {
 			"Your response should be in the same language that the provided news are.",
 	}
 }
-
-/*func GetMessageAsString(message Message) (string, error) {
-	jsonBytes, err := json.Marshal(message)
-	if err != nil {
-		return "", fmt.Errorf("error marshalling message: %v", err)
-	}
-
-	return string(jsonBytes), nil
-}*/
