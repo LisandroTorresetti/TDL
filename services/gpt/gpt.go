@@ -1,7 +1,7 @@
 package gpt
 
 import (
-	"bot-telegram/services/gpt/internal/config"
+	"bot-telegram/services/gpt/config"
 	"bot-telegram/services/gpt/internal/domain"
 	"encoding/json"
 	"fmt"
@@ -31,8 +31,8 @@ func NewGPT(gptConfig *config.GPTConfig, client *http.Client) *GPT {
 
 // SummarizeNews returns the userRequest summarized
 // ToDo: if we want, we can send a slice of requests
-func (gpt *GPT) SummarizeNews(userRequest string) (string, error) {
-	userMessage := domain.NewMessage(domain.UserRole, userRequest)
+func (gpt *GPT) SummarizeNews(newsToSummarize string) (string, error) {
+	userMessage := domain.NewMessage(domain.UserRole, newsToSummarize)
 	complainRequest := domain.NewCompletionRequest(gpt.config, []domain.Message{userMessage})
 	complainRequestStr, err := domain.GetCompletionRequestAsString(complainRequest)
 	if err != nil {

@@ -16,7 +16,7 @@ import (
 	env "github.com/joho/godotenv"
 )
 
-var token string = ""
+const botTokenEnv = "TELEGRAM_BOT_TOKEN"
 
 // The instance of the bot.
 var bot *bt.Bot
@@ -76,13 +76,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	token := os.Getenv("TELEGRAM_BOT_TOKEN")
+	token := os.Getenv(botTokenEnv)
 
-	up := cfg.DefaultUpdateConfigs()
+	updateConfiguration := cfg.DefaultUpdateConfigs()
 
 	cf := cfg.BotConfigs{
 		BotAPI: cfg.DefaultBotAPI,
-		APIKey: token, UpdateConfigs: up,
+		APIKey: token, UpdateConfigs: updateConfiguration,
 		Webhook:        false,
 		LogFileAddress: cfg.DefaultLogFile,
 	}

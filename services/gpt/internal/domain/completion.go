@@ -1,7 +1,7 @@
 package domain
 
 import (
-	"bot-telegram/services/gpt/internal/config"
+	"bot-telegram/services/gpt/config"
 	"encoding/json"
 )
 
