@@ -2,7 +2,7 @@ package main
 
 import (
 	"bot-telegram/db"
-	"bot-telegram/services"
+	"bot-telegram/handlers"
 	"fmt"
 	"log"
 	"os"
@@ -11,7 +11,6 @@ import (
 
 	bt "github.com/SakoDroid/telego"
 	cfg "github.com/SakoDroid/telego/configs"
-	objs "github.com/SakoDroid/telego/objects"
 	env "github.com/joho/godotenv"
 )
 
@@ -123,60 +122,57 @@ func main() {
 
 }
 func start(d db.DB[Data], dc chan DeleteDataInformation, wi, bi chan GetInformation) {
-	bot.AddHandler("/hi", func(u *objs.Update) {
-		fmt.Println("hi was called")
-		bot.SendMessage(u.Message.Chat.Id, "hello", "", u.Message.MessageId, false, false)
-	}, "private")
+	go handlers.CreateStartHandler(bot)
+	go handlers.CreatePreferencesHandler(bot)
+	go handlers.CreateTopicsHandler(bot)
+	// bot.AddHandler("/start", func(u *objs.Update) {
+	// 	kb := bot.CreateInlineKeyboard()
+	// 	kb.AddCallbackButtonHandler("click me to remove all your data", "/hi", 2, func(update *objs.Update) {
+	// 		fmt.Println("delete was clicked")
+	// 		toRemove := DeleteDataInformation{
+	// 			id:       u.Message.From.Id,
+	// 			toAnswer: u.Message.Chat.Id,
+	// 		}
+	// 		bot.SendMessage(u.Message.Chat.Id, "your data is being removed", "", u.Message.MessageId, false, false)
+	// 		dc <- toRemove
+	// 	})
+	// 	kb.AddCallbackButtonHandler("Check what was whitelisted", "/hi1", 3, func(update *objs.Update) {
+	// 		toRemove := GetInformation{
+	// 			id:       u.Message.From.Id,
+	// 			toAnswer: u.Message.Chat.Id,
+	// 		}
+	// 		fmt.Println("delete2 was clicked")
+	// 		wi <- toRemove
+	// 	})
+	// 	kb.AddCallbackButtonHandler("Check what was blacklisted", "/hi2", 4, func(update *objs.Update) {
+	// 		fmt.Println("delete 3was clicked")
+	// 		toRemove := GetInformation{
+	// 			id:       u.Message.From.Id,
+	// 			toAnswer: u.Message.Chat.Id,
+	// 		}
+	// 		bi <- toRemove
+	// 	})
+	// 	kb.AddCallbackButtonHandler("Get a summarized technology new", "/summarize", 5, func(update *objs.Update) {
+	// 		new, err := services.GetNew("technology")
+	// 		if err != nil {
+	// 			bot.SendMessage(u.Message.Chat.Id, "An error has ocurred, please try again later.", "", 0, false, false)
+	// 		} else {
+	// 			message := services.GetSummarizedMessage(new)
+	// 			bot.SendMessage(u.Message.Chat.Id, message, "markdown", 0, false, false)
+	// 		}
+	// 	})
+	// 	di := Data{
+	// 		BlackList:  []string{},
+	// 		NewsWanted: []string{},
+	// 		Id:         u.Message.From.Id,
+	// 	}
 
-	bot.AddHandler("/start", func(u *objs.Update) {
-		kb := bot.CreateInlineKeyboard()
-		kb.AddURLButton("Click me to go to google", "google.com", 1)
-		kb.AddCallbackButtonHandler("click me to remove all your data", "/hi", 2, func(update *objs.Update) {
-			fmt.Println("delete was clicked")
-			toRemove := DeleteDataInformation{
-				id:       u.Message.From.Id,
-				toAnswer: u.Message.Chat.Id,
-			}
-			bot.SendMessage(u.Message.Chat.Id, "your data is being removed", "", u.Message.MessageId, false, false)
-			dc <- toRemove
-		})
-		kb.AddCallbackButtonHandler("Check what was whitelisted", "/hi1", 3, func(update *objs.Update) {
-			toRemove := GetInformation{
-				id:       u.Message.From.Id,
-				toAnswer: u.Message.Chat.Id,
-			}
-			fmt.Println("delete2 was clicked")
-			wi <- toRemove
-		})
-		kb.AddCallbackButtonHandler("Check what was blacklisted", "/hi2", 4, func(update *objs.Update) {
-			fmt.Println("delete 3was clicked")
-			toRemove := GetInformation{
-				id:       u.Message.From.Id,
-				toAnswer: u.Message.Chat.Id,
-			}
-			bi <- toRemove
-		})
-		kb.AddCallbackButtonHandler("Get a summarized technology new", "/summarize", 5, func(update *objs.Update) {
-			new, err := services.GetNew("technology")
-			if err != nil {
-				bot.SendMessage(u.Message.Chat.Id, "An error has ocurred, please try again later.", "", 0, false, false)
-			} else {
-				message := services.GetSummarizedMessage(new)
-				bot.SendMessage(u.Message.Chat.Id, message, "markdown", 0, false, false)
-			}
-		})
-		di := Data{
-			BlackList:  []string{},
-			NewsWanted: []string{},
-			Id:         u.Message.From.Id,
-		}
+	// 	d.Insert(di)
 
-		d.Insert(di)
-
-		//Sends the message to the chat that the message has been received from. The message will be a reply to the received message.
-		_, err := bot.AdvancedMode().ASendMessage(u.Message.Chat.Id, "Please select one of the options below.", "", u.Message.MessageId, false, false, nil, false, false, kb)
-		if err != nil {
-			fmt.Printf("error happened, %v\n", err)
-		}
-	}, "private")
+	// 	//Sends the message to the chat that the message has been received from. The message will be a reply to the received message.
+	// 	_, err := bot.AdvancedMode().ASendMessage(u.Message.Chat.Id, "Please select one of the options below.", "", u.Message.MessageId, false, false, nil, false, false, kb)
+	// 	if err != nil {
+	// 		fmt.Printf("error happened, %v\n", err)
+	// 	}
+	// }, "private")
 }
