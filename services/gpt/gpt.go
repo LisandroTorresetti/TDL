@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 const (
@@ -53,6 +54,7 @@ func (gpt *GPT) SummarizeNews(newsToSummarize string) (string, error) {
 	request.Header.Add("Content-Type", contentType)
 	apiKey := os.Getenv(openApiKeyEnv)
 	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
+	gpt.client.Timeout = 20 * time.Second
 
 	response, err := gpt.client.Do(request)
 	if err != nil {
