@@ -16,7 +16,7 @@ type Endpoint struct {
 type GPTConfig struct {
 	Model       string              `yaml:"model"`
 	Temperature float64             `yaml:"temperature"`
-	Endpoints   map[string]Endpoint `yaml:"endpoints"`
+	Endpoints   map[string]Endpoint `yaml:"urls"`
 }
 
 func LoadConfig() (*GPTConfig, error) {

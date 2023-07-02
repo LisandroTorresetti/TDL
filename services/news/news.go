@@ -14,7 +14,7 @@ var httpClient = &http.Client{}
 
 type New struct {
 	Title string `json:"title"`
-	Body  string `json:"description"`
+	Body  string `json:"content"`
 	Url   string `json:"link"`
 }
 
@@ -67,7 +67,7 @@ func GetNew(topic string) (*New, error) {
 func GetSummarizedMessage(new *New, gpt *gpt.GPT) string {
 	summarizedBody, err := gpt.SummarizeNews(new.Body)
 	if err != nil {
-		log.Errorf("pepe")
+		log.Errorf("couldn't get summarized news: %+v", err)
 	}
 	return fmt.Sprintf("*%s*\n\n%s\n\n%s", new.Title, summarizedBody, new.Url)
 }
