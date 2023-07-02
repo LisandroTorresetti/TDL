@@ -132,11 +132,14 @@ func start(d db.DB[dtos.Data], dc chan dtos.DeleteDataInformation, wi, bi chan d
 			}
 			bi <- toRemove
 		})
-		kb.AddCallbackButtonHandler("Summarize a hardcoded and short new", "/summarize", 5, func(update *objs.Update) {
-			fmt.Println("Summarize new was clicked")
-			newBody := news.GetRandomNew()
-			summarizedNew, _ := g.SummarizeNews(newBody)
-			bot.SendMessage(u.Message.Chat.Id, summarizedNew, "", 0, false, false)
+		kb.AddCallbackButtonHandler("Get a summarized technology new", "/summarize", 5, func(update *objs.Update) {
+			new, err := news.GetNew("technology")
+			if err != nil {
+				bot.SendMessage(u.Message.Chat.Id, "An error has ocurred, please try again later.", "", 0, false, false)
+			} else {
+				message := news.GetSummarizedMessage(new, g)
+				bot.SendMessage(u.Message.Chat.Id, message, "markdown", 0, false, false)
+			}
 		})
 		di := dtos.Data{
 			OmittedTopics: []string{},
