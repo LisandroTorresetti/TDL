@@ -6,7 +6,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const configFilepath = "./config.yaml"
+const configFilepath = "services/gpt/config/config.yaml"
 
 type Endpoint struct {
 	URL    string `yaml:"url"`

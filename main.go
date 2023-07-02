@@ -3,63 +3,47 @@ package main
 import (
 	newsBot "bot-telegram/bot"
 	"bot-telegram/db"
-	"bot-telegram/services"
+	"bot-telegram/dtos"
+	"bot-telegram/services/gpt"
+	"bot-telegram/services/gpt/config"
+	"bot-telegram/services/news"
 	"fmt"
 	bt "github.com/SakoDroid/telego"
 	objs "github.com/SakoDroid/telego/objects"
 	"log"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 )
-
-const botTokenEnv = "TELEGRAM_BOT_TOKEN"
 
 // The instance of the bot.
 var bot *bt.Bot
 
-/*type Data struct {
-	NewsWanted []string `json:"news_wanted"`
-	BlackList  []string `json:"black_list"`
-	Id         int      `json:"id"`
-}
-
-type DeleteDataInformation struct {
-	id       int
-	toAnswer int
-}
-
-type GetInformation struct {
-	id       int
-	toAnswer int
-}
-
-func (d Data) GetPrimaryKey() int {
-	return d.Id
-}*/
-
-func deleteData(c chan DeleteDataInformation, database db.DB[Data]) {
+func deleteData(c chan dtos.DeleteDataInformation, database db.DB[dtos.Data]) {
 	for {
 		toRemove := <-c
 		fmt.Printf("delete was called with id: %d\n", toRemove)
-		database.Delete(toRemove.id)
-		bot.SendMessage(toRemove.toAnswer, "your data was deleted, to start using our bot again send /start", "", 0, false, false)
+		database.Delete(toRemove.Id)
+		bot.SendMessage(toRemove.ToAnswer, "your data was deleted, to start using our bot again send /start", "", 0, false, false)
 	}
 }
 
-func getWhitelist(c chan GetInformation, database db.DB[Data]) {
+func getWhitelist(c chan dtos.GetInformation, database db.DB[dtos.Data]) {
 	for {
 		toRemove := <-c
 		fmt.Printf("get whitelist was called with id: %d\n", toRemove)
-		data, _ := database.Get(toRemove.id)
-		bot.SendMessage(toRemove.toAnswer, fmt.Sprintf("your data whitelisted is: %v, press /start to see menu again", data.NewsWanted), "", 0, false, false)
+		data, _ := database.Get(toRemove.Id)
+		bot.SendMessage(toRemove.ToAnswer, fmt.Sprintf("your data whitelisted is: %v, press /start to see menu again", data.WantedNews), "", 0, false, false)
 	}
 }
 
-func getBlacklist(c chan GetInformation, database db.DB[Data]) {
+func getBlacklist(c chan dtos.GetInformation, database db.DB[dtos.Data]) {
 	for {
 		toRemove := <-c
 		fmt.Printf("get blacklist was called with id: %d\n", toRemove)
-		data, _ := database.Get(toRemove.id)
-		bot.SendMessage(toRemove.toAnswer, fmt.Sprintf("your data blacklisted is: %v, press /start to see menu again", data.BlackList), "", 0, false, false)
+		data, _ := database.Get(toRemove.Id)
+		bot.SendMessage(toRemove.ToAnswer, fmt.Sprintf("your data blacklisted is: %v, press /start to see menu again", data.OmittedTopics), "", 0, false, false)
 	}
 }
 func main() {
@@ -68,8 +52,8 @@ func main() {
 		fmt.Printf("error creating News Bot: %v", err)
 		os.Exit(1)
 	}
+	bot = telegramNewsBot.TelegramBot
 
-	err = telegramNewsBot.Run()
 	if err != nil {
 		fmt.Printf("service error: %v", err)
 		os.Exit(1)
@@ -77,20 +61,20 @@ func main() {
 
 	fmt.Println("Finish NewsBot successfully")
 
-	/*c := make(chan os.Signal, 1)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c,
 		syscall.SIGHUP,
 		syscall.SIGINT,
 		syscall.SIGTERM,
 		syscall.SIGQUIT,
-	)*/
-	deleteChan := make(chan DeleteDataInformation, 100)
-	wi := make(chan GetInformation, 100)
-	bi := make(chan GetInformation, 100)
+	)
+	deleteChan := make(chan dtos.DeleteDataInformation, 100)
+	wi := make(chan dtos.GetInformation, 100)
+	bi := make(chan dtos.GetInformation, 100)
 	if err == nil {
 		err = bot.Run()
 		if err == nil {
-			d, err := db.CreateDB[Data]("postgres", "pepe")
+			d, err := db.CreateDB[dtos.Data]("postgres", "pepe")
 			if err != nil {
 				log.Printf("error while creating db %v", err)
 			}
@@ -109,7 +93,12 @@ func main() {
 	}
 
 }
-func start(d db.DB[Data], dc chan DeleteDataInformation, wi, bi chan GetInformation) {
+func start(d db.DB[dtos.Data], dc chan dtos.DeleteDataInformation, wi, bi chan dtos.GetInformation) {
+	c, err := config.LoadConfig()
+	if err != nil {
+		panic("pone el error que quieras aca licha")
+	}
+	g := gpt.NewGPT(c, &http.Client{})
 	bot.AddHandler("/hi", func(u *objs.Update) {
 		fmt.Println("hi was called")
 		bot.SendMessage(u.Message.Chat.Id, "hello", "", u.Message.MessageId, false, false)
@@ -120,39 +109,39 @@ func start(d db.DB[Data], dc chan DeleteDataInformation, wi, bi chan GetInformat
 		kb.AddURLButton("Click me to go to google", "google.com", 1)
 		kb.AddCallbackButtonHandler("click me to remove all your data", "/hi", 2, func(update *objs.Update) {
 			fmt.Println("delete was clicked")
-			toRemove := DeleteDataInformation{
-				id:       u.Message.From.Id,
-				toAnswer: u.Message.Chat.Id,
+			toRemove := dtos.DeleteDataInformation{
+				Id:       u.Message.From.Id,
+				ToAnswer: u.Message.Chat.Id,
 			}
 			bot.SendMessage(u.Message.Chat.Id, "your data is being removed", "", u.Message.MessageId, false, false)
 			dc <- toRemove
 		})
 		kb.AddCallbackButtonHandler("Check what was whitelisted", "/hi1", 3, func(update *objs.Update) {
-			toRemove := GetInformation{
-				id:       u.Message.From.Id,
-				toAnswer: u.Message.Chat.Id,
+			toRemove := dtos.GetInformation{
+				Id:       u.Message.From.Id,
+				ToAnswer: u.Message.Chat.Id,
 			}
 			fmt.Println("delete2 was clicked")
 			wi <- toRemove
 		})
 		kb.AddCallbackButtonHandler("Check what was blacklisted", "/hi2", 4, func(update *objs.Update) {
 			fmt.Println("delete 3was clicked")
-			toRemove := GetInformation{
-				id:       u.Message.From.Id,
-				toAnswer: u.Message.Chat.Id,
+			toRemove := dtos.GetInformation{
+				Id:       u.Message.From.Id,
+				ToAnswer: u.Message.Chat.Id,
 			}
 			bi <- toRemove
 		})
 		kb.AddCallbackButtonHandler("Summarize a hardcoded and short new", "/summarize", 5, func(update *objs.Update) {
 			fmt.Println("Summarize new was clicked")
-			newBody := services.GetRandomNew()
-			summarizedNew := services.Summarize(newBody)
+			newBody := news.GetRandomNew()
+			summarizedNew, _ := g.SummarizeNews(newBody)
 			bot.SendMessage(u.Message.Chat.Id, summarizedNew, "", 0, false, false)
 		})
-		di := Data{
-			BlackList:  []string{},
-			NewsWanted: []string{},
-			Id:         u.Message.From.Id,
+		di := dtos.Data{
+			OmittedTopics: []string{},
+			WantedNews:    []string{},
+			Id:            u.Message.From.Id,
 		}
 
 		d.Insert(di)
