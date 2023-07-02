@@ -20,32 +20,6 @@ import (
 // The instance of the bot.
 var bot *bt.Bot
 
-func deleteData(c chan dtos.DeleteDataInformation, database db.DB[dtos.Data]) {
-	for {
-		toRemove := <-c
-		fmt.Printf("delete was called with id: %d\n", toRemove)
-		database.Delete(toRemove.Id)
-		bot.SendMessage(toRemove.ToAnswer, "your data was deleted, to start using our bot again send /start", "", 0, false, false)
-	}
-}
-
-func getWhitelist(c chan dtos.GetInformation, database db.DB[dtos.Data]) {
-	for {
-		toRemove := <-c
-		fmt.Printf("get whitelist was called with id: %d\n", toRemove)
-		data, _ := database.Get(toRemove.Id)
-		bot.SendMessage(toRemove.ToAnswer, fmt.Sprintf("your data whitelisted is: %v, press /start to see menu again", data.WantedNews), "", 0, false, false)
-	}
-}
-
-func getBlacklist(c chan dtos.GetInformation, database db.DB[dtos.Data]) {
-	for {
-		toRemove := <-c
-		fmt.Printf("get blacklist was called with id: %d\n", toRemove)
-		data, _ := database.Get(toRemove.Id)
-		bot.SendMessage(toRemove.ToAnswer, fmt.Sprintf("your data blacklisted is: %v, press /start to see menu again", data.OmittedTopics), "", 0, false, false)
-	}
-}
 func main() {
 	telegramNewsBot, err := newsBot.CreateNewsBot()
 	if err != nil {
@@ -71,6 +45,7 @@ func main() {
 	deleteChan := make(chan dtos.DeleteDataInformation, 100)
 	wi := make(chan dtos.GetInformation, 100)
 	bi := make(chan dtos.GetInformation, 100)
+	ci := make(chan dtos.GetInformation, 100)
 	if err == nil {
 		err = bot.Run()
 		if err == nil {
@@ -78,10 +53,8 @@ func main() {
 			if err != nil {
 				log.Printf("error while creating db %v", err)
 			}
-			start(d, deleteChan, wi, bi)
-			go deleteData(deleteChan, d)
-			go getBlacklist(bi, d)
-			go getWhitelist(wi, d)
+			start(d, deleteChan, wi, bi, ci)
+			newsBot.StartHandlersOperations(deleteChan, ci, wi, bi, d, bot)
 			fmt.Println("waiting for sigterm")
 			<-c
 			fmt.Println("exiting bot")
@@ -93,7 +66,7 @@ func main() {
 	}
 
 }
-func start(d db.DB[dtos.Data], dc chan dtos.DeleteDataInformation, wi, bi chan dtos.GetInformation) {
+func start(d db.DB[dtos.Data], dc chan dtos.DeleteDataInformation, wi, bi, ci chan dtos.GetInformation) {
 	c, err := config.LoadConfig()
 	if err != nil {
 		panic("pone el error que quieras aca licha")
@@ -133,13 +106,20 @@ func start(d db.DB[dtos.Data], dc chan dtos.DeleteDataInformation, wi, bi chan d
 			bi <- toRemove
 		})
 		kb.AddCallbackButtonHandler("Get a summarized technology new", "/summarize", 5, func(update *objs.Update) {
-			new, err := news.GetNew("technology")
+			n, err := news.GetNew("technology")
 			if err != nil {
 				bot.SendMessage(u.Message.Chat.Id, "An error has ocurred, please try again later.", "", 0, false, false)
 			} else {
-				message := news.GetSummarizedMessage(new, g)
+				message := news.GetSummarizedMessage(n, g)
 				bot.SendMessage(u.Message.Chat.Id, message, "markdown", 0, false, false)
 			}
+		})
+		kb.AddCallbackButtonHandler("Add categories", "/summsarize", 5, func(update *objs.Update) {
+			toRemove := dtos.GetInformation{
+				Id:       u.Message.From.Id,
+				ToAnswer: u.Message.Chat.Id,
+			}
+			ci <- toRemove
 		})
 		di := dtos.Data{
 			OmittedTopics: []string{},

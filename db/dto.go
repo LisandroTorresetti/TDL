@@ -5,6 +5,7 @@ type Storable interface {
 }
 type DB[T Storable] interface {
 	Insert(obj T)
+	Update(obj T)
 	Delete(key int) T
 	Get(key int) (T, error)
 }

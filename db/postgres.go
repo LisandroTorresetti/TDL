@@ -25,6 +25,18 @@ func (p *postgresDb[T]) Insert(obj T) {
 	fmt.Printf("insert into %s values (%d, '%v')", p.tableName, obj.GetPrimaryKey(), string(jsonObject))
 }
 
+func (p *postgresDb[T]) Update(obj T) {
+	_, err := p.Get(obj.GetPrimaryKey())
+	if err != nil {
+		return
+	}
+	jsonObject, _ := json.Marshal(obj)
+	fmt.Printf("data is being saved: %v\n", obj)
+	r, err := p.db.Query(fmt.Sprintf("update %s SET data='%v' where id=%d", p.tableName, string(jsonObject), obj.GetPrimaryKey()))
+	fmt.Printf("rows returned %v, error %v\n", r, err)
+	fmt.Printf("update %s SET data='%v' where id=%d", p.tableName, string(jsonObject), obj.GetPrimaryKey())
+}
+
 func (p *postgresDb[T]) Delete(key int) T {
 	r, err := p.Get(key)
 	if err != nil {

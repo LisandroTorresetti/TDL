@@ -10,6 +10,11 @@ func (d Data) GetPrimaryKey() int {
 	return d.Id
 }
 
+type Chat struct {
+	Id       int // Id from whom the request started
+	ToAnswer int //Chat to answer
+}
+
 type DeleteDataInformation struct {
 	Id       int
 	ToAnswer int
