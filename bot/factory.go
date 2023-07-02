@@ -2,6 +2,7 @@ package bot
 
 import (
 	"bot-telegram/db"
+	"bot-telegram/dtos"
 	"bot-telegram/services/gpt"
 	gptConfigLoader "bot-telegram/services/gpt/config"
 	"fmt"
@@ -18,20 +19,9 @@ const (
 	timeout     = 1
 )
 
-// ToDo: I Dont like this, refactor
-type Data struct {
-	NewsWanted []string `json:"news_wanted"`
-	BlackList  []string `json:"black_list"`
-	Id         int      `json:"id"`
-}
-
-func (d Data) GetPrimaryKey() int {
-	return d.Id
-}
-
 // CreateNewsBot returns a NewsProvider with all the services it requires initialized
-func CreateNewsBot() (*NewsBot, error) {
-	database, err := db.CreateDB[Data]("postgres", "pepe")
+func CreateNewsBot() (NewsBotInterface, error) {
+	database, err := db.CreateDB[dtos.Data]("postgres", "pepe")
 	if err != nil {
 		return nil, fmt.Errorf("error creating DB: %v", err)
 	}

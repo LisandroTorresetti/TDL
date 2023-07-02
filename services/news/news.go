@@ -1,7 +1,6 @@
 package news
 
 import (
-	"bot-telegram/services/gpt"
 	"encoding/json"
 	"fmt"
 	log "github.com/sirupsen/logrus"
@@ -11,6 +10,10 @@ import (
 )
 
 var httpClient = &http.Client{}
+
+type Provider interface {
+	SummarizeNews(string) (string, error)
+}
 
 type New struct {
 	Title string `json:"title"`
@@ -29,7 +32,10 @@ func GetNew(topic string) (*New, error) {
 
 	var newsDataApiKey = os.Getenv("NEWS_DATA_API_KEY")
 
-	url := fmt.Sprintf("https://newsdata.io/api/1/news?apikey=%s&category=%s&language=es", newsDataApiKey, topic)
+	url := fmt.Sprintf("https://newsdata.io/api/1/news?apikey=%s&language=es", newsDataApiKey)
+	if topic != "" {
+		url += fmt.Sprintf("&category=%s", topic)
+	}
 
 	fmt.Println(url)
 
@@ -64,10 +70,10 @@ func GetNew(topic string) (*New, error) {
 	return &result.Results[0], nil
 }
 
-func GetSummarizedMessage(new *New, gpt *gpt.GPT) string {
+func GetSummarizedMessage(new *New, gpt Provider) string {
 	summarizedBody, err := gpt.SummarizeNews(new.Body)
 	if err != nil {
 		log.Errorf("couldn't get summarized news: %+v", err)
 	}
-	return fmt.Sprintf("*%s*\n\n%s\n\n%s", new.Title, summarizedBody, new.Url)
+	return fmt.Sprintf("*%s*\n\n%s\n", new.Title, summarizedBody)
 }
