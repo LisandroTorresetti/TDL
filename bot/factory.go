@@ -19,7 +19,7 @@ const (
 	timeout     = 1
 )
 
-// CreateNewsBot returns a NewsProvider with all the services it requires initialized
+// CreateNewsBot returns a NewsBot with all the services it requires initialized
 func CreateNewsBot() (NewsBotInterface, error) {
 	database, err := db.CreateDB[dtos.Data]("postgres", "pepe")
 	if err != nil {
@@ -47,7 +47,7 @@ func CreateNewsBot() (NewsBotInterface, error) {
 
 	bot, err := teleBot.NewBot(&botConfig)
 	if err != nil {
-		fmt.Println("error creating telegram bot: %v", err)
+		fmt.Printf("error creating telegram bot: %v", err)
 		return nil, err
 	}
 

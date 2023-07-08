@@ -165,7 +165,7 @@ func getWantedNewsForUser(info dtos.GetInformation, db db.DB[dtos.Data], bot *te
 	}
 	n, err := news.GetNew(strings.Join(topicsWanted, ","))
 	if err != nil {
-		bot.SendMessage(info.ToAnswer, "An error has ocurred, please try again later.", "", 0, false, false)
+		bot.SendMessage(info.ToAnswer, "An error has occurred, please try again later.", "", 0, false, false)
 	} else {
 		kb := bot.CreateInlineKeyboard()
 		message := news.GetSummarizedMessage(n, gptService)
