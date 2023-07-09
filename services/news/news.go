@@ -9,6 +9,8 @@ import (
 	"os"
 )
 
+const apiKeyEnvVar = "NEWS_DATA_API_KEY"
+
 var httpClient = &http.Client{}
 
 type Provider interface {
@@ -30,11 +32,11 @@ type response struct {
 func GetNew(topic string) (*New, error) {
 	// Source: https://newsdata.io/documentation
 
-	var newsDataApiKey = os.Getenv("NEWS_DATA_API_KEY")
+	newsDataApiKey := os.Getenv(apiKeyEnvVar)
 
 	url := fmt.Sprintf("https://newsdata.io/api/1/news?apikey=%s&language=es", newsDataApiKey)
 	if topic != "" {
-		url += fmt.Sprintf("&category=%s", topic)
+		url += fmt.Sprintf("&category=%s", topic) // ToDo: agregar query. Licha
 	}
 
 	fmt.Println(url)

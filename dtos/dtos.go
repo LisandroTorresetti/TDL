@@ -30,6 +30,11 @@ type Schedule struct {
 	UsersInfo map[int]int `json:"users_info"`
 }
 
+type UserInfo struct {
+	UserID int
+	ChatID int
+}
+
 func (s Schedule) GetPrimaryKey() int {
 	return s.HourID
 }

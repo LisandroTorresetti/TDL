@@ -12,6 +12,7 @@ type NewsBotInterface interface {
 	Run() error
 	StartGoRoutines() error
 	StartHandlers() error
+	SendScheduledNews(hour int) error
 }
 
 type NewsBot struct {
@@ -20,10 +21,6 @@ type NewsBot struct {
 	ScheduleDB  db.DB[dtos.Schedule]
 	GPTService  news.Provider
 	channels    map[string]chan dtos.GetInformation
-}
-
-func (nb *NewsBot) Summarize(newsToSummarize string) (string, error) {
-	return nb.GPTService.SummarizeNews(newsToSummarize)
 }
 
 func (nb *NewsBot) Run() error {
