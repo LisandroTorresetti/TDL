@@ -15,15 +15,22 @@ import (
 )
 
 const (
-	botTokenEnv = "TELEGRAM_BOT_TOKEN"
-	timeout     = 1
+	botTokenEnv   = "TELEGRAM_BOT_TOKEN"
+	timeout       = 1
+	tableName     = "pepe"
+	scheduleTable = "schedule"
 )
 
 // CreateNewsBot returns a NewsBot with all the services it requires initialized
 func CreateNewsBot() (NewsBotInterface, error) {
-	database, err := db.CreateDB[dtos.Data]("postgres", "pepe")
+	database, err := db.CreateDB[dtos.Data]("postgres", tableName)
 	if err != nil {
 		return nil, fmt.Errorf("error creating DB: %v", err)
+	}
+
+	scheduleDB, err := db.CreateDB[dtos.Schedule]("postgres", scheduleTable)
+	if err != nil {
+		return nil, fmt.Errorf("error creating Schedule DB: %v", err)
 	}
 
 	err = env.Load()
@@ -67,6 +74,7 @@ func CreateNewsBot() (NewsBotInterface, error) {
 	return &NewsBot{
 		TelegramBot: bot,
 		DB:          database,
+		ScheduleDB:  scheduleDB,
 		GPTService:  gptService,
 	}, nil
 }

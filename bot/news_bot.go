@@ -17,6 +17,7 @@ type NewsBotInterface interface {
 type NewsBot struct {
 	TelegramBot *teleBot.Bot
 	DB          db.DB[dtos.Data]
+	ScheduleDB  db.DB[dtos.Schedule]
 	GPTService  news.Provider
 	channels    map[string]chan dtos.GetInformation
 }

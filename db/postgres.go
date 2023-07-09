@@ -59,7 +59,7 @@ func (p *postgresDb[T]) Get(key int) (T, error) {
 	err = r.Scan(&id, &d)
 	if err != nil {
 		fmt.Println("error while getting")
-		return data, err
+		return data, fmt.Errorf("%w: %v", ErrNotFound, err)
 	}
 	if err := json.Unmarshal([]byte(d), &data); err != nil {
 		fmt.Println("error while unmarshalling")

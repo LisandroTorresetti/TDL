@@ -24,3 +24,12 @@ type GetInformation struct {
 	Id       int
 	ToAnswer int
 }
+
+type Schedule struct {
+	HourID    int         `json:"id"`
+	UsersInfo map[int]int `json:"users_info"`
+}
+
+func (s Schedule) GetPrimaryKey() int {
+	return s.HourID
+}
