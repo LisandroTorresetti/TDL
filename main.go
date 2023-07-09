@@ -2,10 +2,12 @@ package main
 
 import (
 	newsBot "bot-telegram/bot"
+	"bot-telegram/scheduler"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -40,6 +42,9 @@ func main() {
 		fmt.Printf("error starting handlers: %v\n", err)
 		os.Exit(1)
 	}
+
+	newsScheduler := scheduler.NewNewsScheduler(telegramNewsBot, 5*time.Minute)
+	newsScheduler.Run()
 
 	fmt.Println("Waiting for sigterm")
 
