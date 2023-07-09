@@ -5,42 +5,48 @@ import (
 	"bot-telegram/dtos"
 	"bot-telegram/services/news"
 	"bot-telegram/utils"
+	"errors"
 	"fmt"
 	teleBot "github.com/SakoDroid/telego"
 	objs "github.com/SakoDroid/telego/objects"
 	log "github.com/sirupsen/logrus"
+	"strconv"
 	"strings"
 )
 
 const (
-	CategoriesWanted = "categoriesWanted"
-	DeleteData       = "deleteData"
-	RemoveCategories = "removeCategories"
-	AddCategories    = "addCategories"
-	GetNew           = "getNews"
+	CategoriesWanted    = "categoriesWanted"
+	DeleteData          = "deleteData"
+	RemoveCategories    = "removeCategories"
+	AddCategories       = "addCategories"
+	GetNew              = "getNews"
+	scheduleNewsChannel = "scheduleNews"
 )
 
 var PossibleCategories = []string{"business", "entertainment", "environment", "food", "health", "politics", "science", "sports", "technology", "top", "tourism", "world"}
 
-func StartHandlersOperations(database db.DB[dtos.Data], bot *teleBot.Bot, provider news.Provider) map[string]chan dtos.GetInformation {
+func StartHandlersOperations(newsBot *NewsBot) map[string]chan dtos.GetInformation {
 	deleteChan := getNewChan()
 	getWhitelistChan := getNewChan()
 	removeCategoryChan := getNewChan()
 	addCategoryChan := getNewChan()
 	getNewsChan := getNewChan()
-	go deleteData(deleteChan, database, bot)
-	go getWhitelist(getWhitelistChan, database, bot)
-	go removeCategory(removeCategoryChan, database, bot)
-	go addCategory(addCategoryChan, database, bot)
-	go getWantedNews(getNewsChan, database, bot, provider)
+	scheduleNewsChan := getNewChan()
+	go deleteData(deleteChan, newsBot.DB, newsBot.TelegramBot)
+	go getWhitelist(getWhitelistChan, newsBot.DB, newsBot.TelegramBot)
+	go removeCategory(removeCategoryChan, newsBot.DB, newsBot.TelegramBot)
+	go addCategory(addCategoryChan, newsBot.DB, newsBot.TelegramBot)
+	go getWantedNews(getNewsChan, newsBot.DB, newsBot.TelegramBot, newsBot.GPTService)
+	go scheduleNews(scheduleNewsChan, newsBot.ScheduleDB, newsBot.TelegramBot)
 
 	// ToDo there HAS to be a better way to do this
 	return map[string]chan dtos.GetInformation{
-		DeleteData:       deleteChan,
-		CategoriesWanted: getWhitelistChan,
-		RemoveCategories: removeCategoryChan,
-		AddCategories:    addCategoryChan,
-		GetNew:           getNewsChan,
+		DeleteData:          deleteChan,
+		CategoriesWanted:    getWhitelistChan,
+		RemoveCategories:    removeCategoryChan,
+		AddCategories:       addCategoryChan,
+		GetNew:              getNewsChan,
+		scheduleNewsChannel: scheduleNewsChan,
 	}
 }
 
@@ -171,5 +177,74 @@ func getWantedNewsForUser(info dtos.GetInformation, db db.DB[dtos.Data], bot *te
 		message := news.GetSummarizedMessage(n, gptService)
 		kb.AddURLButton("Ir a la noticia", n.Url, 1)
 		bot.AdvancedMode().ASendMessage(info.ToAnswer, message, "markdown", 0, false, false, nil, false, false, kb)
+	}
+}
+
+// scheduleNews schedules the hour at which a user want news
+func scheduleNews(scheduleChannel chan dtos.GetInformation, scheduleDB db.DB[dtos.Schedule], bot *teleBot.Bot) {
+	for {
+		userInfo := <-scheduleChannel
+		hoursKeyboard := bot.CreateInlineKeyboard()
+		rowIdx := 1
+		for hour := 0; hour <= 23; hour++ {
+			if hour%6 == 0 {
+				rowIdx += 1
+			}
+			hoursKeyboard.AddCallbackButtonHandler(
+				fmt.Sprintf("%v", hour),
+				fmt.Sprintf("%v", hour),
+				rowIdx,
+				func(update *objs.Update) {
+					saveScheduleNewsHour(userInfo, update.CallbackQuery.Data, scheduleDB, bot)
+				},
+			)
+		}
+		_, err := bot.AdvancedMode().ASendMessage(userInfo.ToAnswer, "Select an hour to schedule the news", "", 0, false, false, nil, false, false, hoursKeyboard)
+		if err != nil {
+			panic(fmt.Sprintf("error sending hours keyboard: %v", err))
+		}
+	}
+}
+
+// saveScheduleNewsHour saves in the database the hour that the user have selected
+func saveScheduleNewsHour(userInfo dtos.GetInformation, selectedHour string, scheduleDB db.DB[dtos.Schedule], bot *teleBot.Bot) {
+	hour, err := strconv.Atoi(selectedHour)
+	if err != nil {
+		panic("Invalid format for hour")
+	}
+
+	scheduleData, err := scheduleDB.Get(hour)
+	if err != nil && !errors.Is(err, db.ErrNotFound) {
+		panic(fmt.Sprintf("Error getting data from Schedule DB: %v", err))
+	}
+
+	// We have to insert the new row
+	if errors.Is(err, db.ErrNotFound) {
+		newScheduleData := dtos.Schedule{
+			HourID:    hour,
+			UsersInfo: map[int]int{userInfo.Id: userInfo.ToAnswer},
+		}
+		scheduleDB.Insert(newScheduleData)
+		_, err = bot.SendMessage(userInfo.ToAnswer, fmt.Sprintf("Hour %s scheduled correctly!", selectedHour), "", 0, false, false)
+		if err != nil {
+			panic(fmt.Sprintf("error sending response about scheduled hour: %v", err))
+		}
+		return
+	}
+
+	chatID, ok := scheduleData.UsersInfo[userInfo.Id]
+	if !ok {
+		scheduleData.UsersInfo[userInfo.Id] = userInfo.ToAnswer
+		scheduleDB.Update(scheduleData)
+		_, err = bot.SendMessage(userInfo.ToAnswer, fmt.Sprintf("Hour %s scheduled correctly!", selectedHour), "", 0, false, false)
+		if err != nil {
+			panic(fmt.Sprintf("error sending response about scheduled hour: %v", err))
+		}
+		return
+	}
+
+	_, err = bot.SendMessage(chatID, "You already have scheduled this hour "+selectedHour, "", 0, false, false)
+	if err != nil {
+		panic(fmt.Sprintf("error sending response about already scheduled hour: %v", err))
 	}
 }

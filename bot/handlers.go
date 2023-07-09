@@ -7,7 +7,7 @@ import (
 )
 
 func (nb *NewsBot) StartGoRoutines() error {
-	m := StartHandlersOperations(nb.DB, nb.TelegramBot, nb.GPTService)
+	m := StartHandlersOperations(nb)
 	nb.channels = m
 	return nil
 }
@@ -58,6 +58,14 @@ func (nb *NewsBot) StartHandlers() error {
 			}
 			nb.channels[AddCategories] <- toRemove
 		})
+		kb.AddCallbackButtonHandler("Schedule News", "/scheduleNews", 6, func(update *objs.Update) {
+			userInfo := dtos.GetInformation{
+				Id:       u.Message.From.Id,
+				ToAnswer: u.Message.Chat.Id,
+			}
+			nb.channels[scheduleNewsChannel] <- userInfo
+		})
+
 		di := dtos.Data{
 			OmittedTopics: []string{},
 			WantedNews:    []string{},
