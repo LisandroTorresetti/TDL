@@ -20,7 +20,8 @@ func Contains[T comparable](value T, arr []T) bool {
 // + item2
 // + itemN
 func GetItemsMessage(message string, items []string) string {
-	formattedMessage := fmt.Sprintf("%s:", message)
+	formattedMessage := fmt.Sprintf("%s:\n\t+ ", message)
 	formattedItems := strings.Join(items, "\n\t+ ")
+	formattedItems += "\n"
 	return formattedMessage + formattedItems
 }

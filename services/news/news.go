@@ -36,7 +36,7 @@ func GetNew(topic string) (*New, error) {
 
 	url := fmt.Sprintf("https://newsdata.io/api/1/news?apikey=%s&language=es", newsDataApiKey)
 	if topic != "" {
-		url += fmt.Sprintf("&category=%s", topic) // ToDo: agregar query. Licha
+		url += fmt.Sprintf("&category=%s", topic)
 	}
 
 	fmt.Println(url)

@@ -3,8 +3,10 @@ package bot
 import (
 	"bot-telegram/db"
 	"bot-telegram/dtos"
+	"bot-telegram/services/news"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 )
 
@@ -55,7 +57,6 @@ func (nb *NewsBot) getScheduledUsers(hour int) ([]dtos.UserInfo, error) {
 
 // sendNewsForUser sends news to the given user
 func (nb *NewsBot) sendNewsForUser(userInfo dtos.UserInfo) {
-	nb.TelegramBot.SendMessage(userInfo.ChatID, "Hola que tal tu como estas? dime si eres feliz", "", 0, false, false)
 	userNewsData, err := nb.DB.Get(userInfo.UserID)
 	if err != nil {
 		fmt.Printf("unexpected error sending scheduled news for user %v: %v", userInfo, err)
@@ -67,14 +68,17 @@ func (nb *NewsBot) sendNewsForUser(userInfo dtos.UserInfo) {
 		return
 	}
 
-	//newsToSend, err := news.GetNew(strings.Join(userNewsData.WantedNews, ","))
-	//if err != nil {
-	//	fmt.Printf("error occurred: %v\n", err)
-	//	return
-	//}
-	//
-	//inlineKeyboard := nb.TelegramBot.CreateInlineKeyboard()
-	//message := news.GetSummarizedMessage(newsToSend, nb.GPTService)
-	//inlineKeyboard.AddURLButton("Ir a la noticia", newsToSend.Url, 1)
-	//nb.TelegramBot.AdvancedMode().ASendMessage(userInfo.ChatID, message, "markdown", 0, false, false, nil, false, false, inlineKeyboard)
+	newsToSend, err := news.GetNew(strings.Join(userNewsData.WantedNews, ","))
+	if err != nil {
+		fmt.Printf("error occurred: %v\n", err)
+		return
+	}
+
+	inlineKeyboard := nb.TelegramBot.CreateInlineKeyboard()
+	message := news.GetSummarizedMessage(newsToSend, nb.GPTService)
+	inlineKeyboard.AddURLButton("Go to the news", newsToSend.Url, 1)
+	_, err = nb.TelegramBot.AdvancedMode().ASendMessage(userInfo.ChatID, message, "markdown", 0, false, false, nil, false, false, inlineKeyboard)
+	if err != nil {
+		panic(fmt.Sprintf("error sending scheduled news to user %v: %v", userInfo.UserID, err))
+	}
 }

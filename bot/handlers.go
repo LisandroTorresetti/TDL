@@ -44,7 +44,7 @@ func (nb *NewsBot) StartHandlers() error {
 			}
 			nb.channels[RemoveCategories] <- toRemove
 		})
-		kb.AddCallbackButtonHandler("Get a summarized new about your interests", "/summarize", 4, func(update *objs.Update) {
+		kb.AddCallbackButtonHandler("Get a summarized news about your interests", "/summarize", 4, func(update *objs.Update) {
 			toRetrieveNews := dtos.GetInformation{
 				Id:       u.Message.From.Id,
 				ToAnswer: u.Message.Chat.Id,

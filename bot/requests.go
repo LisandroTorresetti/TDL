@@ -33,7 +33,7 @@ func StartHandlersOperations(newsBot *NewsBot) map[string]chan dtos.GetInformati
 	getNewsChan := getNewChan()
 	scheduleNewsChan := getNewChan()
 	go deleteData(deleteChan, newsBot.DB, newsBot.TelegramBot)
-	go getWhitelist(getWhitelistChan, newsBot.DB, newsBot.TelegramBot)
+	go getLikedTopics(getWhitelistChan, newsBot.DB, newsBot.TelegramBot)
 	go removeCategory(removeCategoryChan, newsBot.DB, newsBot.TelegramBot)
 	go addCategory(addCategoryChan, newsBot.DB, newsBot.TelegramBot)
 	go getWantedNews(getNewsChan, newsBot.DB, newsBot.TelegramBot, newsBot.GPTService)
@@ -63,12 +63,17 @@ func deleteData(c chan dtos.GetInformation, database db.DB[dtos.Data], bot *tele
 	}
 }
 
-func getWhitelist(c chan dtos.GetInformation, database db.DB[dtos.Data], bot *teleBot.Bot) {
+// getLikedTopics returns the liked topics for the given user
+func getLikedTopics(c chan dtos.GetInformation, database db.DB[dtos.Data], bot *teleBot.Bot) {
 	for {
-		toRemove := <-c
-		fmt.Printf("get whitelist was called with id: %d\n", toRemove)
-		data, _ := database.Get(toRemove.Id)
-		bot.SendMessage(toRemove.ToAnswer, fmt.Sprintf("your data whitelisted is: %v, press /start to see menu again", data.WantedNews), "", 0, false, false)
+		userInfo := <-c
+		fmt.Printf("get liked topics was called with ID: %d\n", userInfo)
+		data, _ := database.Get(userInfo.Id)
+		formattedMessage := utils.GetItemsMessage("Your liked topics are", data.WantedNews)
+		_, err := bot.SendMessage(userInfo.ToAnswer, formattedMessage+"\nPress /start to see menu again", "markdown", 0, false, false)
+		if err != nil {
+			fmt.Printf("error sending liked topics for user %v: %v\n", userInfo.Id, err)
+		}
 	}
 }
 
@@ -103,7 +108,10 @@ func addCategoryForChat(info dtos.GetInformation, db db.DB[dtos.Data], bot *tele
 				} else {
 					d.WantedNews = append(d.WantedNews, key)
 					db.Update(d)
-					bot.SendMessage(info.ToAnswer, fmt.Sprintf("added %s to the categories wanted, current is: %+v", key, d.WantedNews), "", 0, false, false)
+
+					message := fmt.Sprintf("added %s to the categories wanted. Current liked categories are", key)
+					formattedMessage := utils.GetItemsMessage(message, d.WantedNews)
+					bot.SendMessage(info.ToAnswer, formattedMessage, "", 0, false, false)
 				}
 			})
 		}
@@ -175,7 +183,7 @@ func getWantedNewsForUser(info dtos.GetInformation, db db.DB[dtos.Data], bot *te
 	} else {
 		kb := bot.CreateInlineKeyboard()
 		message := news.GetSummarizedMessage(n, gptService)
-		kb.AddURLButton("Ir a la noticia", n.Url, 1)
+		kb.AddURLButton("Go to the news", n.Url, 1)
 		bot.AdvancedMode().ASendMessage(info.ToAnswer, message, "markdown", 0, false, false, nil, false, false, kb)
 	}
 }
@@ -225,7 +233,7 @@ func saveScheduleNewsHour(userInfo dtos.GetInformation, selectedHour string, sch
 			UsersInfo: map[int]int{userInfo.Id: userInfo.ToAnswer},
 		}
 		scheduleDB.Insert(newScheduleData)
-		_, err = bot.SendMessage(userInfo.ToAnswer, fmt.Sprintf("Hour %s scheduled correctly!", selectedHour), "", 0, false, false)
+		_, err = bot.SendMessage(userInfo.ToAnswer, fmt.Sprintf("Hour scheduled correctly! You will receive news at %v hs", selectedHour), "", 0, false, false)
 		if err != nil {
 			panic(fmt.Sprintf("error sending response about scheduled hour: %v", err))
 		}
@@ -236,7 +244,7 @@ func saveScheduleNewsHour(userInfo dtos.GetInformation, selectedHour string, sch
 	if !ok {
 		scheduleData.UsersInfo[userInfo.Id] = userInfo.ToAnswer
 		scheduleDB.Update(scheduleData)
-		_, err = bot.SendMessage(userInfo.ToAnswer, fmt.Sprintf("Hour %s scheduled correctly!", selectedHour), "", 0, false, false)
+		_, err = bot.SendMessage(userInfo.ToAnswer, fmt.Sprintf("Hour scheduled correctly! You will receive news at %v hs", selectedHour), "", 0, false, false)
 		if err != nil {
 			panic(fmt.Sprintf("error sending response about scheduled hour: %v", err))
 		}
