@@ -5,22 +5,7 @@ import (
 	"testing"
 )
 
-// Dummy tests, we should show the Table test
-func TestIntIsInSlice(t *testing.T) {
-	valueToFind := 69
-	elements := []int{1, 2, 3, 4, 85, 69}
-	result := Contains(valueToFind, elements)
-	assert.True(t, result)
-}
-
-func TestIntIsNotInSlice(t *testing.T) {
-	valueToFind := 69
-	elements := []int{1, 2, 3, 4, 85}
-	result := Contains(valueToFind, elements)
-	assert.False(t, result)
-}
-
-func TestContainsInt(t *testing.T) {
+func TestContains(t *testing.T) {
 	testCases := []struct {
 		Name           string
 		ValueToFind    int

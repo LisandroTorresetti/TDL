@@ -37,7 +37,7 @@ func (gpt *GPT) SummarizeNews(newsToSummarize string) (string, error) {
 	complainRequest := domain.NewCompletionRequest(gpt.config, []domain.Message{userMessage})
 	complainRequestStr, err := domain.GetCompletionRequestAsString(complainRequest)
 	if err != nil {
-		return "", err // ToDo: add typed error
+		return "", err
 	}
 
 	endpoint, ok := gpt.config.Endpoints[postCompletionURL]
@@ -50,7 +50,6 @@ func (gpt *GPT) SummarizeNews(newsToSummarize string) (string, error) {
 		return "", fmt.Errorf("error creating request: %v", err)
 	}
 
-	// ToDo: if we need more headers create a package for them. Doing this we can avoid writing them manually
 	request.Header.Add("Content-Type", contentType)
 	apiKey := os.Getenv(openApiKeyEnv)
 	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
@@ -76,6 +75,5 @@ func (gpt *GPT) SummarizeNews(newsToSummarize string) (string, error) {
 		return "", fmt.Errorf("error unmarshalling response: %v", err)
 	}
 
-	// ToDo: check if it's better to return the struct instead of the message
 	return completionResponse.Messages[0].Content, nil
 }

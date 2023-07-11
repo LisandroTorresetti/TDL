@@ -35,7 +35,7 @@ func (ns *NewsScheduler) Run() {
 	fmt.Printf("Waiting %v until the next o'clock hour\n", duration)
 	delayTicker := time.NewTicker(duration)
 	newsTicker := time.NewTicker(ns.newsInterval)
-	newsTicker.Stop()
+	//newsTicker.Stop()
 
 	for {
 		select {

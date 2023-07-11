@@ -43,7 +43,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	newsScheduler := scheduler.NewNewsScheduler(telegramNewsBot, 5*time.Minute)
+	newsScheduler := scheduler.NewNewsScheduler(telegramNewsBot, 3*time.Minute)
 	newsScheduler.Run()
 
 	fmt.Println("Waiting for sigterm")

@@ -21,13 +21,13 @@ func (nb *NewsBot) StartHandlers() error {
 
 	bot.AddHandler("/start", func(u *objs.Update) {
 		kb := bot.CreateInlineKeyboard()
-		kb.AddCallbackButtonHandler("click me to remove all your data", "/hi", 2, func(update *objs.Update) {
+		kb.AddCallbackButtonHandler("Delete all your data", "/hi", 2, func(update *objs.Update) {
 			fmt.Println("delete was clicked")
 			toRemove := dtos.GetInformation{
 				Id:       u.Message.From.Id,
 				ToAnswer: u.Message.Chat.Id,
 			}
-			bot.SendMessage(u.Message.Chat.Id, "your data is being removed", "", u.Message.MessageId, false, false)
+			bot.SendMessage(u.Message.Chat.Id, "Your data is being removed...", "", u.Message.MessageId, false, false)
 			nb.channels[DeleteData] <- toRemove
 		})
 		kb.AddCallbackButtonHandler("Check categories added", "/hi1", 3, func(update *objs.Update) {
@@ -44,7 +44,7 @@ func (nb *NewsBot) StartHandlers() error {
 			}
 			nb.channels[RemoveCategories] <- toRemove
 		})
-		kb.AddCallbackButtonHandler("Get a summarized news about your interests", "/summarize", 4, func(update *objs.Update) {
+		kb.AddCallbackButtonHandler("Get a summarized news about your interests", "/getWantedNews", 4, func(update *objs.Update) {
 			toRetrieveNews := dtos.GetInformation{
 				Id:       u.Message.From.Id,
 				ToAnswer: u.Message.Chat.Id,

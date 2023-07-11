@@ -144,7 +144,9 @@ func removeCategoryForChat(info dtos.GetInformation, db db.DB[dtos.Data], bot *t
 					return
 				}
 				if !utils.Contains(key, d.WantedNews) {
-					bot.SendMessage(info.ToAnswer, fmt.Sprintf("you already removed this category from your wishlist: %s, selected: %+v", key, d.WantedNews), "", 0, false, false)
+					message := fmt.Sprintf("You already have removed this category from your wanted topics: %s. Your current wanted topics are", key)
+					formattedMessage := utils.GetItemsMessage(message, d.WantedNews)
+					bot.SendMessage(info.ToAnswer, formattedMessage, "Markdown", 0, false, false)
 				} else {
 					s := make([]string, 0, len(d.WantedNews)-1)
 					for _, k := range d.WantedNews {
@@ -154,12 +156,16 @@ func removeCategoryForChat(info dtos.GetInformation, db db.DB[dtos.Data], bot *t
 					}
 					d.WantedNews = s
 					db.Update(d)
-					bot.SendMessage(info.ToAnswer, fmt.Sprintf("removed %s to the categories wanted, current is: %+v", key, d.WantedNews), "", 0, false, false)
+					message := fmt.Sprintf("Category '%s' was removed correctly!. Your current wanted topics are", key)
+					formattedMessage := utils.GetItemsMessage(message, d.WantedNews)
+					bot.SendMessage(info.ToAnswer, formattedMessage, "", 0, false, false)
 				}
 			})
 		}
 	}
-	bot.AdvancedMode().ASendMessage(info.ToAnswer, fmt.Sprintf("Select options below to remove categories, current selected are: %v", data.WantedNews), "", 0, false, false, nil, false, false, kb)
+	message := fmt.Sprintf("Select options below to remove categories, current selected are")
+	formattedMessage := utils.GetItemsMessage(message, data.WantedNews)
+	bot.AdvancedMode().ASendMessage(info.ToAnswer, formattedMessage, "", 0, false, false, nil, false, false, kb)
 }
 
 func getWantedNews(c chan dtos.GetInformation, db db.DB[dtos.Data], bot *teleBot.Bot, gptService news.Provider) {
